@@ -1,0 +1,123 @@
+version: '3.8'
+
+services:
+  # Database
+  postgres:
+    image: postgres:15
+    container_name: adherent_postgres
+    environment:
+      POSTGRES_DB: adherent_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/migrations:/docker-entrypoint-initdb.d
+    networks:
+      - adherent_network
+
+  # Auth Service
+  auth-service:
+    build: 
+      context: ./backend/auth-service
+      dockerfile: Dockerfile
+    container_name: auth_service
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=adherent_db
+      - DB_USER=admin
+      - DB_PASSWORD=password123
+      - JWT_SECRET=your-super-secret-jwt-key-here
+      - JWT_REFRESH_SECRET=your-super-secret-refresh-key-here
+    depends_on:
+      - postgres
+    volumes:
+      - ./backend/auth-service/src:/app/src
+    networks:
+      - adherent_network
+
+  # Profile Service
+  profile-service:
+    build: 
+      context: ./backend/profile-service
+      dockerfile: Dockerfile
+    container_name: profile_service
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=adherent_db
+      - DB_USER=admin
+      - DB_PASSWORD=password123
+      - JWT_SECRET=your-super-secret-jwt-key-here
+    depends_on:
+      - postgres
+    volumes:
+      - ./backend/profile-service/src:/app/src
+      - ./backend/profile-service/uploads:/app/uploads
+    networks:
+      - adherent_network
+
+  # Document Service
+  document-service:
+    build: 
+      context: ./backend/document-service
+      dockerfile: Dockerfile
+    container_name: document_service
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=development
+      - PORT=3003
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=adherent_db
+      - DB_USER=admin
+      - DB_PASSWORD=password123
+      - JWT_SECRET=your-super-secret-jwt-key-here
+    depends_on:
+      - postgres
+    volumes:
+      - ./backend/document-service/src:/app/src
+      - ./backend/document-service/uploads:/app/uploads
+    networks:
+      - adherent_network
+
+  # API Gateway
+  api-gateway:
+    build: 
+      context: ./backend/api-gateway
+      dockerfile: Dockerfile
+    container_name: api_gateway
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - PROFILE_SERVICE_URL=http://profile-service:3002
+      - DOCUMENT_SERVICE_URL=http://document-service:3003
+    depends_on:
+      - auth-service
+      - profile-service
+      - document-service
+    volumes:
+      - ./backend/api-gateway/src:/app/src
+    networks:
+      - adherent_network
+
+volumes:
+  postgres_data:
+
+networks:
+  adherent_network:
+    driver: bridge
