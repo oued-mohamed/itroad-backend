@@ -1,0 +1,9 @@
+# infrastructure/kubernetes/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: adherant-platform
+  labels:
+    name: adherant-platform
+
+---

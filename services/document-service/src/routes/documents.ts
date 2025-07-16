@@ -1,4 +1,4 @@
-// services/document-service/src/routes/documents.ts 
+// services/document-service/src/routes/documents.ts
 import { Router } from 'express';
 import { DocumentController } from '../controllers/documentController';
 import { HealthController } from '../controllers/healthController';
@@ -18,11 +18,11 @@ router.get('/health', HealthController.check);
 
 // Document routes (all require authentication)
 router.post('/', 
-router.post('/', 
   authenticateToken, 
   uploadDocument.array('documents', 5), 
   DocumentController.uploadDocuments
 );
+
 router.get('/', 
   authenticateToken, 
   validatePagination, 

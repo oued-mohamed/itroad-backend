@@ -1,0 +1,73 @@
+# docker-compose.prod.yml
+version: '3.8'
+
+services:
+  postgres:
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/backups:/backups
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+
+  auth-service:
+    restart: always
+    environment:
+      NODE_ENV: production
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+    volumes:
+      - ./services/auth-service/logs:/app/logs
+
+  profile-service:
+    restart: always
+    environment:
+      NODE_ENV: production
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+    volumes:
+      - ./services/profile-service/uploads:/app/uploads
+      - ./services/profile-service/logs:/app/logs
+
+  document-service:
+    restart: always
+    environment:
+      NODE_ENV: production
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 1G
+          cpus: "0.75"
+    volumes:
+      - ./services/document-service/uploads:/app/uploads
+      - ./services/document-service/logs:/app/logs
+
+  api-gateway:
+    restart: always
+    environment:
+      NODE_ENV: production
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.25"
+    volumes:
+      - ./services/api-gateway/logs:/app/logs
+
