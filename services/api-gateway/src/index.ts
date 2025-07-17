@@ -15,7 +15,10 @@ const app = express();
 
 // Security middleware
 app.use(helmet());
+
+// CORS must be before other middleware
 app.use(corsMiddleware);
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -31,14 +34,16 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Gateway routes
-app.use('/api', gatewayRoutes);
+// Gateway routes - support both /api and /api/v1
+app.use('/api/v1', gatewayRoutes); // ✅ Add v1 support
+app.use('/api', gatewayRoutes);    // ✅ Keep existing
 
 // 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({
     success: false,
-    message: 'Endpoint not found'
+    message: 'Endpoint not found',
+    path: req.originalUrl
   });
 });
 
@@ -50,8 +55,8 @@ const startServer = () => {
   app.listen(config.PORT, () => {
     logger.info(`API Gateway running on port ${config.PORT}`);
     logger.info('Service endpoints:', config.SERVICES);
+    logger.info('CORS origins:', config.CORS_ORIGIN);
   });
 };
 
 startServer();
-

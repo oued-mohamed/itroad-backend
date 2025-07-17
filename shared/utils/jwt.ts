@@ -1,13 +1,14 @@
 import jwt, { SignOptions, VerifyOptions } from 'jsonwebtoken';
+import type { StringValue } from 'ms';
 import { JwtPayload } from '../types/auth';
 
 // Configuration par défaut
 const DEFAULT_ISSUER = 'adherant-platform';
 const DEFAULT_AUDIENCE = 'adherant-users';
-const DEFAULT_EXPIRES_IN = '1h';
+const DEFAULT_EXPIRES_IN: StringValue = '1h' as StringValue;
 
 interface TokenOptions {
-  expiresIn?: string | number;  // Fixed: Allow both string and number
+  expiresIn?: number | StringValue;  // Use the exact types from ms library
   issuer?: string;
   audience?: string;
 }
@@ -30,7 +31,7 @@ export const generateToken = (
   }
 
   const signOptions: SignOptions = {
-    expiresIn: options.expiresIn || DEFAULT_EXPIRES_IN,
+    expiresIn: (options.expiresIn || DEFAULT_EXPIRES_IN) as number | StringValue,
     issuer: options.issuer || DEFAULT_ISSUER,
     audience: options.audience || DEFAULT_AUDIENCE,
     algorithm: 'HS256' // Explicitement spécifier l'algorithme

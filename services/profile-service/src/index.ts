@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { connectDB } from './config/database';
 import { config } from './config/environment';
-import profileRoutes from './routes/profile';
+import profileRoutes from './routes/profiles';
 import { errorHandler } from './middleware/errorHandler';
 import { logger } from './utils/logger';
 

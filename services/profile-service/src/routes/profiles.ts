@@ -18,4 +18,3 @@ router.delete('/', authenticateToken, ProfileController.deleteProfile);
 router.post('/avatar', authenticateToken, uploadAvatar.single('avatar'), ProfileController.uploadAvatar);
 
 export default router;
-

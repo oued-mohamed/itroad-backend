@@ -9,11 +9,23 @@ export const handleValidationErrors = (req: Request, res: Response, next: NextFu
     res.status(400).json({
       success: false,
       message: 'Validation failed',
-      errors: errors.array().map(error => ({
-        field: error.param,
-        message: error.msg,
-        value: error.value
-      }))
+      errors: errors.array().map(error => {
+        // Handle different error types from express-validator
+        let field = 'unknown';
+        if ('path' in error && typeof error.path === 'string') {
+          field = error.path;
+        } else if ('param' in error && typeof error.param === 'string') {
+          field = error.param;
+        } else if ('location' in error && typeof error.location === 'string') {
+          field = error.location;
+        }
+
+        return {
+          field,
+          message: error.msg,
+          value: 'value' in error ? error.value : undefined
+        };
+      })
     });
     return;
   }
@@ -43,7 +55,8 @@ export const documentValidationRules = {
     body('isPublic')
       .optional()
       .isBoolean()
-      .withMessage('isPublic must be a boolean'),
+      .withMessage('isPublic must be a boolean')
+      .toBoolean(),
     body('tags')
       .optional()
       .isArray()
@@ -52,7 +65,7 @@ export const documentValidationRules = {
         if (tags && tags.length > 10) {
           throw new Error('Maximum 10 tags allowed');
         }
-        if (tags && tags.some(tag => typeof tag !== 'string' || tag.length > 50)) {
+        if (tags && tags.some((tag: string) => typeof tag !== 'string' || tag.length > 50)) {
           throw new Error('Each tag must be a string with maximum 50 characters');
         }
         return true;
@@ -79,7 +92,8 @@ export const documentValidationRules = {
     body('isPublic')
       .optional()
       .isBoolean()
-      .withMessage('isPublic must be a boolean'),
+      .withMessage('isPublic must be a boolean')
+      .toBoolean(),
     body('tags')
       .optional()
       .isArray()
@@ -88,7 +102,7 @@ export const documentValidationRules = {
         if (tags && tags.length > 10) {
           throw new Error('Maximum 10 tags allowed');
         }
-        if (tags && tags.some(tag => typeof tag !== 'string' || tag.length > 50)) {
+        if (tags && tags.some((tag: string) => typeof tag !== 'string' || tag.length > 50)) {
           throw new Error('Each tag must be a string with maximum 50 characters');
         }
         return true;
@@ -104,10 +118,10 @@ export const paramValidationRules = {
       .withMessage('Document ID must be a valid UUID')
   ],
   
-  adherantId: [
-    param('adherantId')
+  adherentId: [  // Fixed typo: "adherantId" -> "adherentId"
+    param('adherentId')
       .isUUID()
-      .withMessage('Adherant ID must be a valid UUID')
+      .withMessage('Adherent ID must be a valid UUID')
   ]
 };
 
@@ -149,6 +163,7 @@ export const queryValidationRules = {
       .optional()
       .isBoolean()
       .withMessage('isPublic must be a boolean')
+      .toBoolean()  // Added conversion to boolean
   ],
 
   filter: [
@@ -159,7 +174,8 @@ export const queryValidationRules = {
     query('isPublic')
       .optional()
       .isBoolean()
-      .withMessage('isPublic must be a boolean'),
+      .withMessage('isPublic must be a boolean')
+      .toBoolean(),  // Added conversion to boolean
     query('tags')
       .optional()
       .customSanitizer((value) => {
@@ -173,13 +189,15 @@ export const queryValidationRules = {
     query('dateFrom')
       .optional()
       .isISO8601()
-      .withMessage('dateFrom must be a valid ISO 8601 date'),
+      .withMessage('dateFrom must be a valid ISO 8601 date')
+      .toDate(),  // Added conversion to Date
     query('dateTo')
       .optional()
       .isISO8601()
       .withMessage('dateTo must be a valid ISO 8601 date')
+      .toDate()  // Added conversion to Date
       .custom((value, { req }) => {
-        if (req.query.dateFrom && new Date(value) <= new Date(req.query.dateFrom as string)) {
+        if (req.query?.['dateFrom'] && value <= req.query['dateFrom']) {
           throw new Error('dateTo must be after dateFrom');
         }
         return true;
@@ -192,6 +210,7 @@ export const validateDocumentUpdate = validate(documentValidationRules.update);
 export const validateDocumentCreate = validate(documentValidationRules.create);
 export const validatePagination = validate(queryValidationRules.pagination);
 export const validateDocumentId = validate(paramValidationRules.documentId);
+export const validateAdherentId = validate(paramValidationRules.adherentId);  // Added missing export
 export const validateSearch = validate([...queryValidationRules.search, ...queryValidationRules.pagination]);
 export const validateFilter = validate([...queryValidationRules.filter, ...queryValidationRules.pagination]);
 
@@ -271,6 +290,18 @@ export const validateBulkUpdate = validate([
       if (!updateKeys.every(key => allowedFields.includes(key))) {
         throw new Error(`Only these fields can be updated: ${allowedFields.join(', ')}`);
       }
+      
+      // Validate individual update fields
+      if (updates.category && !['identity', 'medical', 'education', 'employment', 'financial', 'other'].includes(updates.category)) {
+        throw new Error('Category must be one of: identity, medical, education, employment, financial, other');
+      }
+      if (updates.isPublic !== undefined && typeof updates.isPublic !== 'boolean') {
+        throw new Error('isPublic must be a boolean');
+      }
+      if (updates.tags && (!Array.isArray(updates.tags) || updates.tags.length > 10 || updates.tags.some((tag: string) => typeof tag !== 'string' || tag.length > 50))) {
+        throw new Error('Tags must be an array of strings with maximum 10 items, each with maximum 50 characters');
+      }
+      
       return true;
     })
 ]);
