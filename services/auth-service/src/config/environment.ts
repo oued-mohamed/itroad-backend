@@ -1,6 +1,6 @@
 // services/auth-service/src/config/environment.ts
 export const config = {
-  PORT: parseInt(process.env['PORT'] || '3001'),
+  PORT: parseInt(process.env['PORT'] || '3007'),
   NODE_ENV: process.env['NODE_ENV'] || 'development',
   DB_HOST: process.env['DB_HOST'] || 'localhost',
   DB_PORT: parseInt(process.env['DB_PORT'] || '5432'),

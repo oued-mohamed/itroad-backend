@@ -5,10 +5,10 @@ export const config = {
   JWT_SECRET: process.env['JWT_SECRET'] || 'your-super-secret-jwt-key-here-make-it-long-and-random',
   
   // Service URLs
-  AUTH_SERVICE_URL: process.env['AUTH_SERVICE_URL'] || 'http://localhost:3001',
-  PROFILE_SERVICE_URL: process.env['PROFILE_SERVICE_URL'] || 'http://localhost:3002',
-  PROPERTY_SERVICE_URL: process.env['PROPERTY_SERVICE_URL'] || 'http://localhost:3003',
-  DOCUMENT_SERVICE_URL: process.env['DOCUMENT_SERVICE_URL'] || 'http://localhost:3004',
+  AUTH_SERVICE_URL: process.env['AUTH_SERVICE_URL'] || 'http://localhost:3007',
+  PROFILE_SERVICE_URL: process.env['PROFILE_SERVICE_URL'] || 'http://localhost:3003',
+  PROPERTY_SERVICE_URL: process.env['PROPERTY_SERVICE_URL'] || 'http://localhost:3004',
+  DOCUMENT_SERVICE_URL: process.env['DOCUMENT_SERVICE_URL'] || 'http://localhost:3002',
   TRANSACTION_SERVICE_URL: process.env['TRANSACTION_SERVICE_URL'] || 'http://localhost:3005',
   
   // Rate limiting
