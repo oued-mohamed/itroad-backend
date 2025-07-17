@@ -12,31 +12,31 @@ export const services: Record<string, ServiceConfig> = {
   auth: {
     name: 'auth-service',
     url: config.AUTH_SERVICE_URL,
-    healthEndpoint: '/api/auth/health',
+    healthEndpoint: '/health', // Changed from '/api/auth/health' to '/health'
     timeout: 5000
   },
   profile: {
     name: 'profile-service',
     url: config.PROFILE_SERVICE_URL,
-    healthEndpoint: '/api/profile/health',
+    healthEndpoint: '/health', // Simplified to '/health'
     timeout: 5000
   },
   property: {
     name: 'property-service',
     url: config.PROPERTY_SERVICE_URL,
-    healthEndpoint: '/api/properties/health',
+    healthEndpoint: '/health', // Simplified to '/health'
     timeout: 5000
   },
   document: {
     name: 'document-service',
     url: config.DOCUMENT_SERVICE_URL,
-    healthEndpoint: '/api/documents/health',
+    healthEndpoint: '/health', // Simplified to '/health'
     timeout: 10000 // Higher timeout for file operations
   },
   transaction: {
     name: 'transaction-service',
     url: config.TRANSACTION_SERVICE_URL,
-    healthEndpoint: '/api/transactions/health',
+    healthEndpoint: '/health', // Simplified to '/health'
     timeout: 5000
   }
 };
@@ -48,21 +48,26 @@ export class ServiceDiscovery {
   static async checkHealth(serviceName: string): Promise<boolean> {
     const service = services[serviceName];
     if (!service) {
+      console.error(`❌ Service ${serviceName} not found in service registry`);
       throw new Error(`Service ${serviceName} not found`);
     }
 
     // Check cache first
     const cached = this.healthCache.get(serviceName);
     if (cached && Date.now() - cached.lastCheck < this.CACHE_TTL) {
+      console.log(`📋 Using cached health status for ${serviceName}: ${cached.status}`);
       return cached.status;
     }
+
+    const healthUrl = `${service.url}${service.healthEndpoint}`;
+    console.log(`🏥 Checking health for ${serviceName}: ${healthUrl}`);
 
     try {
       // Create AbortController for timeout functionality
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), service.timeout);
 
-      const response = await fetch(`${service.url}${service.healthEndpoint}`, {
+      const response = await fetch(healthUrl, {
         method: 'GET',
         signal: controller.signal,
         headers: {
@@ -73,6 +78,8 @@ export class ServiceDiscovery {
       clearTimeout(timeoutId);
       const isHealthy = response.ok;
       
+      console.log(`${isHealthy ? '✅' : '❌'} Health check for ${serviceName}: ${response.status} ${response.statusText}`);
+      
       // Update cache
       this.healthCache.set(serviceName, {
         status: isHealthy,
@@ -81,7 +88,8 @@ export class ServiceDiscovery {
 
       return isHealthy;
     } catch (error) {
-      console.error(`Health check failed for ${serviceName}:`, error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error(`❌ Health check failed for ${serviceName}:`, errorMessage);
       
       // Update cache with failed status
       this.healthCache.set(serviceName, {
@@ -94,6 +102,8 @@ export class ServiceDiscovery {
   }
 
   static async checkAllServices(): Promise<Record<string, boolean>> {
+    console.log('🔍 Checking health of all services...');
+    
     const healthChecks = await Promise.allSettled(
       Object.keys(services).map(async (serviceName) => ({
         serviceName,
@@ -114,14 +124,18 @@ export class ServiceDiscovery {
       }
     });
 
+    console.log('📊 All services health status:', results);
     return results;
   }
 
   static getServiceUrl(serviceName: string): string {
     const service = services[serviceName];
     if (!service) {
+      console.error(`❌ Service ${serviceName} not found in service registry`);
+      console.log('📋 Available services:', Object.keys(services));
       throw new Error(`Service ${serviceName} not found`);
     }
+    console.log(`🔗 Getting URL for ${serviceName}: ${service.url}`);
     return service.url;
   }
 
@@ -134,6 +148,7 @@ export class ServiceDiscovery {
   }
 
   static clearHealthCache(): void {
+    console.log('🧹 Clearing health cache');
     this.healthCache.clear();
   }
 

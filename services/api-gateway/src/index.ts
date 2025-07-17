@@ -16,8 +16,11 @@ const app = express();
 // Security middleware
 app.use(helmet());
 
-// CORS must be before other middleware
+// CORS must be FIRST and handle all requests including OPTIONS
 app.use(corsMiddleware);
+
+// Explicitly handle OPTIONS preflight requests
+app.options('*', corsMiddleware);
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -35,8 +38,8 @@ app.get('/health', (req, res) => {
 });
 
 // Gateway routes - support both /api and /api/v1
-app.use('/api/v1', gatewayRoutes); // ✅ Add v1 support
-app.use('/api', gatewayRoutes);    // ✅ Keep existing
+app.use('/api/v1', gatewayRoutes);
+app.use('/api', gatewayRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
@@ -54,8 +57,23 @@ app.use(errorHandler);
 const startServer = () => {
   app.listen(config.PORT, () => {
     logger.info(`API Gateway running on port ${config.PORT}`);
-    logger.info('Service endpoints:', config.SERVICES);
+    
+    // Fixed logging - show individual service URLs
+    logger.info('Service endpoints:', {
+      AUTH: config.AUTH_SERVICE_URL,
+      PROFILE: config.PROFILE_SERVICE_URL,
+      PROPERTY: config.PROPERTY_SERVICE_URL,
+      DOCUMENT: config.DOCUMENT_SERVICE_URL,
+      TRANSACTION: config.TRANSACTION_SERVICE_URL
+    });
+    
     logger.info('CORS origins:', config.CORS_ORIGIN);
+    
+    // Debug: Show environment variables
+    console.log('🔧 Environment Debug:');
+    console.log('AUTH_SERVICE_URL from env:', process.env['AUTH_SERVICE_URL']);
+    console.log('AUTH_SERVICE_URL from config:', config.AUTH_SERVICE_URL);
+    console.log('NODE_ENV:', config.NODE_ENV);
   });
 };
 
